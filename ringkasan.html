@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Slip</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .slip {
+      width: 300px;
+      margin: 30px auto;
+      padding: 20px;
+      border: 1px dashed #000;
+      background: #fff;
+      font-family: monospace;
+    }
+    .slip h2 { text-align: center; margin-bottom: 5px; }
+    .slip .info div { display: flex; justify-content: space-between; font-size: 12px; }
+    .slip .item { display: flex; justify-content: space-between; margin: 5px 0; }
+    .slip .total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; font-weight: bold; }
+    .slip .history { margin-top: 10px; font-size: 12px; border-top: 1px dashed #000; padding-top: 5px; }
+    #qrcode { margin: 10px auto; width: fit-content; }
+    .btn-container { text-align: center; margin-top: 20px; }
+    .btn-container button { margin: 5px; }
+    @media print { .btn-container { display: none; } body { background: #fff; } }
+  </style>
+</head>
+<body>
+  <div class="slip" id="slip">
+    <h2>Slip Anggaran</h2>
+
+    <div class="info">
+      <div><span>User:</span> <span id="slip-user"></span></div>
+      <div><span>Tanggal:</span> <span id="slip-tanggal"></span></div>
+      <div><span>ID:</span> <span id="slip-id"></span></div>
+    </div>
+    <div class="item"><span>Total Masuk:</span> <span id="slip-masuk">0</span></div>
+    <div class="item"><span>Total Keluar:</span> <span id="slip-keluar">0</span></div>
+    <div class="item total"><span>Saldo:</span> <span id="slip-saldo">0</span></div>
+    <div class="history" id="history"><h3>5 Transaksi Terakhir</h3></div>
+    <div id="qrcode"></div>
+    <p style="text-align:center;font-size:12px;">-- Terima Kasih --</p>
+    <p style="text-align:right;font-size:4px;">-- By Nsr --
+  </div>
+
+  <div class="btn-container">
+    <button onclick="window.location.href='index.html'">⬅ Kembali</button>
+    <button onclick="window.print()">🖨 Cetak Slip</button>
+    <button onclick="downloadQR()">⬇ Download QR</button>
+    <button class="logout" onclick="logout()">🚪 Logout</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const loginUser = localStorage.getItem("loginUser");
+    if (!loginUser) window.location.href = "login.html";
+
+    const keyTransaksi = "transaksi_" + loginUser;
+    const transaksi = JSON.parse(localStorage.getItem(keyTransaksi)) || [];
+
+    let totalMasuk = transaksi.filter(t => t.tipe==="masuk").reduce((a,b)=>a+b.jumlah,0);
+    let totalKeluar = transaksi.filter(t => t.tipe==="keluar").reduce((a,b)=>a+b.jumlah,0);
+    let saldo = totalMasuk - totalKeluar;
+
+    const slipId = "TX-" + Date.now().toString().slice(-6);
+    document.getElementById("slip-user").textContent = loginUser;
+    document.getElementById("slip-tanggal").textContent = new Date().toLocaleString("id-ID");
+    document.getElementById("slip-id").textContent = slipId;
+    document.getElementById("slip-masuk").textContent = "Rp " + totalMasuk.toLocaleString();
+    document.getElementById("slip-keluar").textContent = "Rp " + totalKeluar.toLocaleString();
+    document.getElementById("slip-saldo").textContent = "Rp " + saldo.toLocaleString();
+
+    // tampilkan 5 transaksi terakhir
+    const lastTrx = transaksi.slice(-5).reverse();
+    const historyDiv = document.getElementById("history");
+    if (lastTrx.length === 0) historyDiv.innerHTML += "<div>Belum ada transaksi</div>";
+    else lastTrx.forEach(t => {
+      historyDiv.innerHTML += `<div style="display:flex;justify-content:space-between;">
+        <span>${t.tanggal} - ${t.keterangan}</span>
+        <span>${t.tipe==="masuk" ? "+" : "-"}Rp ${t.jumlah.toLocaleString()}</span>
+      </div>`;
+    });
+
+    // buat QR berisi detail slip
+    const slipData = `
+Slip Anggaran
+-----------------
+User: ${loginUser}
+Tanggal: ${new Date().toLocaleString("id-ID")}
+ID: ${slipId}
+Total Masuk: Rp ${totalMasuk.toLocaleString()}
+Total Keluar: Rp ${totalKeluar.toLocaleString()}
+Saldo: Rp ${saldo.toLocaleString()}
+-----------------
+Terima Kasih
+    `;
+    const qrcodeContainer = document.getElementById("qrcode");
+    new QRCode(qrcodeContainer, { text: slipData, width: 100, height: 100 });
+
+    // download QR
+    function downloadQR() {
+      const img = qrcodeContainer.querySelector("img") || qrcodeContainer.querySelector("canvas");
+      if (img) {
+        const link = document.createElement("a");
+        link.href = img.src || img.toDataURL("image/png");
+        link.download = slipId + "_QRCode.png";
+        link.click();
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("loginUser");
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>

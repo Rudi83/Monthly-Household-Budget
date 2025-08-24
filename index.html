@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Anggaran Rumah Tangga</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Input Anggaran</h2>
+    <form id="formTransaksi">
+      <select id="tipe">
+        <option value="masuk">Uang Masuk</option>
+        <option value="keluar">Uang Keluar</option>
+      </select>
+      <input type="number" id="jumlah" placeholder="Jumlah" required>
+      <input type="text" id="keterangan" placeholder="Keterangan" required>
+      <input type="date" id="tanggal" required>
+      <button type="submit">Tambah</button>
+    </form>
+
+    <h3>Filter Transaksi</h3>
+    <input type="text" id="filter" placeholder="Cari keterangan...">
+    <button onclick="tampilkanData()">Terapkan Filter</button>
+
+    <h3>Daftar Transaksi</h3>
+    <table id="tabelTransaksi">
+      <thead>
+        <tr>
+          <th>Tipe</th>
+          <th>Jumlah</th>
+          <th>Keterangan</th>
+          <th>Tanggal</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button onclick="window.location.href='ringkasan.html'">Lihat Ringkasan</button>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    const loginUser = localStorage.getItem("loginUser");
+    if (!loginUser) window.location.href = "login.html";
+
+    const keyTransaksi = "transaksi_" + loginUser;
+    let transaksi = JSON.parse(localStorage.getItem(keyTransaksi)) || [];
+
+    document.getElementById("formTransaksi").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const tipe = document.getElementById("tipe").value;
+      const jumlah = parseFloat(document.getElementById("jumlah").value);
+      const keterangan = document.getElementById("keterangan").value;
+      const tanggal = document.getElementById("tanggal").value;
+
+      transaksi.push({ tipe, jumlah, keterangan, tanggal });
+      localStorage.setItem(keyTransaksi, JSON.stringify(transaksi));
+      tampilkanData();
+      this.reset();
+    });
+
+    function tampilkanData() {
+      const filter = document.getElementById("filter").value.toLowerCase();
+      const tbody = document.querySelector("#tabelTransaksi tbody");
+      tbody.innerHTML = "";
+
+      transaksi.filter(t => t.keterangan.toLowerCase().includes(filter))
+               .forEach(t => {
+        const row = `<tr>
+          <td>${t.tipe}</td>
+          <td>Rp ${t.jumlah.toLocaleString()}</td>
+          <td>${t.keterangan}</td>
+          <td>${t.tanggal}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    tampilkanData();
+
+    function logout() {
+      localStorage.removeItem("loginUser");
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>
