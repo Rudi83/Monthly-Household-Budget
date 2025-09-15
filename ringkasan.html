@@ -2,30 +2,12 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Slip</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slip Anggaran</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .slip {
-      width: 300px;
-      margin: 30px auto;
-      padding: 20px;
-      border: 1px dashed #000;
-      background: #fff;
-      font-family: monospace;
-    }
-    .slip h2 { text-align: center; margin-bottom: 5px; }
-    .slip .info div { display: flex; justify-content: space-between; font-size: 12px; }
-    .slip .item { display: flex; justify-content: space-between; margin: 5px 0; }
-    .slip .total { border-top: 1px dashed #000; margin-top: 10px; padding-top: 10px; font-weight: bold; }
-    .slip .history { margin-top: 10px; font-size: 12px; border-top: 1px dashed #000; padding-top: 5px; }
-    #qrcode { margin: 10px auto; width: fit-content; }
-    .btn-container { text-align: center; margin-top: 20px; }
-    .btn-container button { margin: 5px; }
-    @media print { .btn-container { display: none; } body { background: #fff; } }
-  </style>
 </head>
 <body>
-  <div class="slip" id="slip">
+  <div class="slip fade-in" id="slip">
     <h2>Slip Anggaran</h2>
 
     <div class="info">
@@ -33,23 +15,44 @@
       <div><span>Tanggal:</span> <span id="slip-tanggal"></span></div>
       <div><span>ID:</span> <span id="slip-id"></span></div>
     </div>
+    
     <div class="item"><span>Total Masuk:</span> <span id="slip-masuk">0</span></div>
     <div class="item"><span>Total Keluar:</span> <span id="slip-keluar">0</span></div>
     <div class="item total"><span>Saldo:</span> <span id="slip-saldo">0</span></div>
-    <div class="history" id="history"><h3>5 Transaksi Terakhir</h3></div>
+    
+    <div class="history" id="history">
+      <h3>5 Transaksi Terakhir</h3>
+    </div>
+    
     <div id="qrcode"></div>
-    <p style="text-align:center;font-size:12px;">-- Terima Kasih --</p>
-    <p style="text-align:right;font-size:4px;">-- By Nsr --
+    
+    <p class="text-center" style="font-size:12px; margin-top: 15px;">-- Terima Kasih --</p>
+    <p style="text-align:right;font-size:10px;opacity:0.7;">By Nsr</p>
   </div>
 
   <div class="btn-container">
-    <button onclick="window.location.href='index.html'">⬅ Kembali</button>
-    <button onclick="window.print()">🖨 Cetak Slip</button>
-    <button onclick="downloadQR()">⬇ Download QR</button>
-    <button class="logout" onclick="logout()">🚪 Logout</button>
+    <button onclick="window.location.href='index.html'" class="btn-secondary">
+      <span>Kembali</span>
+    </button>
+    <button onclick="window.print()" class="btn-success">
+      <span>Cetak Slip</span>
+    </button>
+    <button onclick="downloadQR()" class="btn-secondary">
+      <span>Download QR</span>
+    </button>
+    <button onclick="downloadPDF()" class="btn-success">
+      <span>Download Semua Data (PDF)</span>
+    </button>
+    <button class="logout btn-danger" onclick="logout()">
+      <span>Logout</span>
+    </button>
   </div>
 
+  <!-- Library eksternal -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
   <script>
     const loginUser = localStorage.getItem("loginUser");
     if (!loginUser) window.location.href = "login.html";
@@ -57,44 +60,74 @@
     const keyTransaksi = "transaksi_" + loginUser;
     const transaksi = JSON.parse(localStorage.getItem(keyTransaksi)) || [];
 
-    let totalMasuk = transaksi.filter(t => t.tipe==="masuk").reduce((a,b)=>a+b.jumlah,0);
-    let totalKeluar = transaksi.filter(t => t.tipe==="keluar").reduce((a,b)=>a+b.jumlah,0);
-    let saldo = totalMasuk - totalKeluar;
+    // cek apakah ada slipId dari URL
+    const urlParams = new URLSearchParams(window.location.search);
+    let slipId = urlParams.get("id");
 
-    const slipId = "TX-" + Date.now().toString().slice(-6);
-    document.getElementById("slip-user").textContent = loginUser;
-    document.getElementById("slip-tanggal").textContent = new Date().toLocaleString("id-ID");
-    document.getElementById("slip-id").textContent = slipId;
-    document.getElementById("slip-masuk").textContent = "Rp " + totalMasuk.toLocaleString();
-    document.getElementById("slip-keluar").textContent = "Rp " + totalKeluar.toLocaleString();
-    document.getElementById("slip-saldo").textContent = "Rp " + saldo.toLocaleString();
+    let slipData;
+    if (slipId && localStorage.getItem("slip_" + slipId)) {
+      // jika slipId ada di localStorage, pakai data lama
+      slipData = JSON.parse(localStorage.getItem("slip_" + slipId));
+    } else {
+      // kalau tidak ada slipId, buat slip baru
+      slipId = "TX-" + Date.now().toString().slice(-6);
+
+      const totalMasuk = transaksi.filter(t => t.tipe==="masuk").reduce((a,b)=>a+b.jumlah,0);
+      const totalKeluar = transaksi.filter(t => t.tipe==="keluar").reduce((a,b)=>a+b.jumlah,0);
+      const saldo = totalMasuk - totalKeluar;
+
+      slipData = {
+        user: loginUser,
+        tanggal: new Date().toLocaleString("id-ID"),
+        id: slipId,
+        totalMasuk,
+        totalKeluar,
+        saldo,
+        transaksi
+      };
+
+      // simpan slip ke localStorage
+      localStorage.setItem("slip_" + slipId, JSON.stringify(slipData));
+    }
+
+    // tampilkan data slip
+    document.getElementById("slip-user").textContent = slipData.user;
+    document.getElementById("slip-tanggal").textContent = slipData.tanggal;
+    document.getElementById("slip-id").textContent = slipData.id;
+    document.getElementById("slip-masuk").textContent = "Rp " + slipData.totalMasuk.toLocaleString();
+    document.getElementById("slip-keluar").textContent = "Rp " + slipData.totalKeluar.toLocaleString();
+    document.getElementById("slip-saldo").textContent = "Rp " + slipData.saldo.toLocaleString();
 
     // tampilkan 5 transaksi terakhir
-    const lastTrx = transaksi.slice(-5).reverse();
+    const lastTrx = slipData.transaksi.slice(-5).reverse();
     const historyDiv = document.getElementById("history");
-    if (lastTrx.length === 0) historyDiv.innerHTML += "<div>Belum ada transaksi</div>";
-    else lastTrx.forEach(t => {
-      historyDiv.innerHTML += `<div style="display:flex;justify-content:space-between;">
-        <span>${t.tanggal} - ${t.keterangan}</span>
-        <span>${t.tipe==="masuk" ? "+" : "-"}Rp ${t.jumlah.toLocaleString()}</span>
-      </div>`;
-    });
+    if (lastTrx.length === 0) {
+      historyDiv.innerHTML += "<div class='text-center'>Belum ada transaksi</div>";
+    } else {
+      lastTrx.forEach(t => {
+        historyDiv.innerHTML += `
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+            <span>${new Date(t.tanggal).toLocaleDateString('id-ID')} - ${t.keterangan}</span>
+            <span style="color:${t.tipe==="masuk" ? '#28a745' : '#ff6b6b'}">
+              ${t.tipe==="masuk" ? "+" : "-"}Rp ${t.jumlah.toLocaleString()}
+            </span>
+          </div>`;
+      });
+    }
 
-    // buat QR berisi detail slip
-    const slipData = `
-Slip Anggaran
------------------
-User: ${loginUser}
-Tanggal: ${new Date().toLocaleString("id-ID")}
-ID: ${slipId}
-Total Masuk: Rp ${totalMasuk.toLocaleString()}
-Total Keluar: Rp ${totalKeluar.toLocaleString()}
-Saldo: Rp ${saldo.toLocaleString()}
------------------
-Terima Kasih
-    `;
+    // buat QR code berisi link ke slip ini
+    const baseUrl = window.location.origin + window.location.pathname.replace("ringkasan.html", "");
+    const qrLink = baseUrl + "ringkasan.html?id=" + slipData.id;
+
     const qrcodeContainer = document.getElementById("qrcode");
-    new QRCode(qrcodeContainer, { text: slipData, width: 100, height: 100 });
+    new QRCode(qrcodeContainer, { 
+      text: qrLink, 
+      width: 160, 
+      height: 160,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
 
     // download QR
     function downloadQR() {
@@ -102,14 +135,44 @@ Terima Kasih
       if (img) {
         const link = document.createElement("a");
         link.href = img.src || img.toDataURL("image/png");
-        link.download = slipId + "_QRCode.png";
+        link.download = slipData.id + "_QRCode.png";
         link.click();
       }
     }
 
+    // download semua data ke PDF
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(14);
+      doc.text("Daftar Transaksi - " + loginUser, 14, 20);
+
+      const rows = slipData.transaksi.map((t, i) => [
+        i + 1,
+        t.tipe === "masuk" ? "Masuk" : "Keluar",
+        "Rp " + t.jumlah.toLocaleString(),
+        t.keterangan,
+        new Date(t.tanggal).toLocaleDateString("id-ID")
+      ]);
+
+      doc.autoTable({
+        startY: 30,
+        head: [["No", "Tipe", "Jumlah", "Keterangan", "Tanggal"]],
+        body: rows,
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [58, 123, 213] },
+        theme: "grid"
+      });
+
+      doc.save("transaksi_" + loginUser + ".pdf");
+    }
+
     function logout() {
-      localStorage.removeItem("loginUser");
-      window.location.href = "login.html";
+      if (confirm("Apakah Anda yakin ingin logout?")) {
+        localStorage.removeItem("loginUser");
+        window.location.href = "login.html";
+      }
     }
   </script>
 </body>
