@@ -2,42 +2,53 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anggaran Rumah Tangga</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
+  <div class="container fade-in">
     <h2>Input Anggaran</h2>
     <form id="formTransaksi">
-      <select id="tipe">
-        <option value="masuk">Uang Masuk</option>
-        <option value="keluar">Uang Keluar</option>
-      </select>
-      <input type="number" id="jumlah" placeholder="Jumlah" required>
-      <input type="text" id="keterangan" placeholder="Keterangan" required>
-      <input type="date" id="tanggal" required>
-      <button type="submit">Tambah</button>
+      <div class="input-group">
+        <label for="tipe">Tipe Transaksi</label>
+        <select id="tipe">
+          <option value="masuk">Uang Masuk</option>
+          <option value="keluar">Uang Keluar</option>
+        </select>
+      </div>
+      
+      <div class="input-group">
+        <label for="jumlah">Jumlah</label>
+        <input type="number" id="jumlah" placeholder="Masukkan jumlah" required>
+      </div>
+      
+      <div class="input-group">
+        <label for="keterangan">Keterangan</label>
+        <input type="text" id="keterangan" placeholder="Deskripsi transaksi" required>
+      </div>
+      
+      <div class="input-group">
+        <label for="tanggal">Tanggal</label>
+        <input type="date" id="tanggal" required>
+      </div>
+      
+      <button type="submit" class="btn-success">
+        <span id="btnText">Tambah Transaksi</span>
+      </button>
     </form>
 
-    <h3>Filter Transaksi</h3>
-    <input type="text" id="filter" placeholder="Cari keterangan...">
-    <button onclick="tampilkanData()">Terapkan Filter</button>
-
-    <h3>Daftar Transaksi</h3>
-    <table id="tabelTransaksi">
-      <thead>
-        <tr>
-          <th>Tipe</th>
-          <th>Jumlah</th>
-          <th>Keterangan</th>
-          <th>Tanggal</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <button onclick="window.location.href='ringkasan.html'">Lihat Ringkasan</button>
-    <button class="logout" onclick="logout()">Logout</button>
+    <div class="nav-buttons">
+      <button onclick="window.location.href='transaksi.html'" class="btn-secondary">
+        <span>Lihat Daftar Transaksi</span>
+      </button>
+      <button onclick="window.location.href='ringkasan.html'" class="btn-secondary">
+        <span>Lihat Ringkasan</span>
+      </button>
+      <button class="logout btn-danger" onclick="logout()">
+        <span>Logout</span>
+      </button>
+    </div>
   </div>
 
   <script>
@@ -46,7 +57,40 @@
 
     const keyTransaksi = "transaksi_" + loginUser;
     let transaksi = JSON.parse(localStorage.getItem(keyTransaksi)) || [];
+    let editIndex = null; // index transaksi yang sedang diedit
 
+    // == Toast Notification ==
+    function showToast(message, type = "success") {
+      const toast = document.createElement("div");
+      toast.className = toast +type;
+      document.body.appendChild(toast);
+      toast.textContent = message;
+      document.body.appendChild(toast);
+
+      setTimeout(() => toast.classList.add("show"), 100); // delay untuk animasi
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => document.body.removeChild(toast), 300); // hapus setelah animasi
+      }, 2500);
+    }
+
+    // cek apakah ada data edit
+    const editData = localStorage.getItem("editData");
+    if (editData) {
+      const t = JSON.parse(editData);
+      document.getElementById("tipe").value = t.tipe;
+      document.getElementById("jumlah").value = t.jumlah;
+      document.getElementById("keterangan").value = t.keterangan;
+      document.getElementById("tanggal").value = t.tanggal;
+
+      document.getElementById("btnText").textContent = "Update Transaksi";
+      editIndex = transaksi.length; // posisi terakhir karena sudah di-splice di transaksi.html
+      localStorage.removeItem("editData");
+    } else {
+      document.getElementById("tanggal").valueAsDate = new Date(); // default hari ini
+    }
+
+    // Simpan transaksi
     document.getElementById("formTransaksi").addEventListener("submit", function(e) {
       e.preventDefault();
       const tipe = document.getElementById("tipe").value;
@@ -54,34 +98,29 @@
       const keterangan = document.getElementById("keterangan").value;
       const tanggal = document.getElementById("tanggal").value;
 
-      transaksi.push({ tipe, jumlah, keterangan, tanggal });
+      if (editIndex !== null) {
+        // mode update
+        transaksi.splice(editIndex, 0, { tipe, jumlah, keterangan, tanggal });
+        editIndex = null;
+        document.getElementById("btnText").textContent = "Tambah Transaksi";
+        alert("Transaksi berhasil diperbarui!");
+      } else {
+        // mode tambah baru
+        transaksi.push({ tipe, jumlah, keterangan, tanggal });
+        alert("Transaksi berhasil ditambahkan!");
+      }
+
       localStorage.setItem(keyTransaksi, JSON.stringify(transaksi));
-      tampilkanData();
       this.reset();
+      document.getElementById("tanggal").valueAsDate = new Date();
     });
 
-    function tampilkanData() {
-      const filter = document.getElementById("filter").value.toLowerCase();
-      const tbody = document.querySelector("#tabelTransaksi tbody");
-      tbody.innerHTML = "";
-
-      transaksi.filter(t => t.keterangan.toLowerCase().includes(filter))
-               .forEach(t => {
-        const row = `<tr>
-          <td>${t.tipe}</td>
-          <td>Rp ${t.jumlah.toLocaleString()}</td>
-          <td>${t.keterangan}</td>
-          <td>${t.tanggal}</td>
-        </tr>`;
-        tbody.innerHTML += row;
-      });
-    }
-
-    tampilkanData();
-
+    // === Logout ===
     function logout() {
-      localStorage.removeItem("loginUser");
-      window.location.href = "login.html";
+      if (confirm("Apakah Anda yakin ingin logout?")) {
+        localStorage.removeItem("loginUser");
+        window.location.href = "login.html";
+      }
     }
   </script>
 </body>
