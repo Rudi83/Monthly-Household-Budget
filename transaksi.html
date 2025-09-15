@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar Transaksi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container fade-in">
+    <h2>Daftar Transaksi</h2>
+
+    <h3>Filter Transaksi</h3>
+    <div class="filter-section">
+      <input type="text" id="filter" placeholder="Cari berdasarkan keterangan...">
+      <button onclick="tampilkanData()" class="btn-secondary">Terapkan Filter</button>
+    </div>
+
+    <div class="table-container">
+      <table id="tabelTransaksi">
+        <thead>
+          <tr>
+            <th>Tipe</th>
+            <th>Jumlah</th>
+            <th>Keterangan</th>
+            <th>Tanggal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="nav-buttons">
+      <button onclick="window.location.href='index.html'" class="btn-secondary">
+        <span>Kembali ke Input</span>
+      </button>
+      <button onclick="window.location.href='ringkasan.html'" class="btn-secondary">
+        <span>Lihat Ringkasan</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const loginUser = localStorage.getItem("loginUser");
+    if (!loginUser) window.location.href = "login.html";
+
+    const keyTransaksi = "transaksi_" + loginUser;
+    let transaksi = JSON.parse(localStorage.getItem(keyTransaksi)) || [];
+
+    function tampilkanData() {
+      const filter = document.getElementById("filter").value.toLowerCase();
+      const tbody = document.querySelector("#tabelTransaksi tbody");
+      tbody.innerHTML = "";
+
+      const filteredData = transaksi.filter(t => t.keterangan.toLowerCase().includes(filter));
+      
+      if (filteredData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center">Tidak ada transaksi</td></tr>`;
+        return;
+      }
+
+      filteredData.forEach((t) => {
+        const realIndex = transaksi.findIndex(item => 
+          item.tipe === t.tipe &&
+          item.jumlah === t.jumlah &&
+          item.keterangan === t.keterangan &&
+          item.tanggal === t.tanggal
+        );
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${t.tipe === 'masuk' ? '✅ Masuk' : '❌ Keluar'}</td>
+          <td>Rp ${t.jumlah.toLocaleString()}</td>
+          <td>${t.keterangan}</td>
+          <td>${new Date(t.tanggal).toLocaleDateString('id-ID')}</td>
+          <td>
+            <div class="table-actions">
+              <button onclick="editTransaksi(${realIndex})" class="btn-secondary btn-sm">✏️ Edit</button>
+              <button onclick="hapusTransaksi(${realIndex})" class="btn-danger btn-sm">🗑️ Hapus</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function editTransaksi(index) {
+      const t = transaksi[index];
+      localStorage.setItem("editData", JSON.stringify(t));
+      transaksi.splice(index, 1);
+      localStorage.setItem(keyTransaksi, JSON.stringify(transaksi));
+      window.location.href = "index.html";
+    }
+
+    function hapusTransaksi(index) {
+      if (confirm("Yakin ingin menghapus transaksi ini?")) {
+        transaksi.splice(index, 1);
+        localStorage.setItem(keyTransaksi, JSON.stringify(transaksi));
+        tampilkanData();
+      }
+    }
+
+    tampilkanData();
+  </script>
+</body>
+</html>
