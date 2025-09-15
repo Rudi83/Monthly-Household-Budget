@@ -1,63 +1,430 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #20201f;
+/* ==== Global Styles ==== */
+:root {
+  --primary: #3a7bd5;
+  --primary-dark: #2c5faa;
+  --secondary: #00d2ff;
+  --accent: #ff6b6b;
+  --success: #28a745;
+  --dark: #121212;
+  --darker: #0a0a0a;
+  --light: #f8f9fa;
+  --gray: #6c757d;
+  --border-radius: 12px;
+  --box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --transition: all 0.3s ease;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, var(--darker), var(--dark));
+  min-height: 100vh;
+  color: var(--light);
+  line-height: 1.6;
+}
+
+/* ==== Container Card ==== */
 .container {
   width: 90%;
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* ==== Heading Styles ==== */
 h2, h3 {
   text-align: center;
-  margin-bottom: 15px;
+  margin-bottom: 25px;
+  font-weight: 600;
+  color: var(--light);
+  position: relative;
+  padding-bottom: 10px;
 }
 
+h2::after, h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(to right, var(--primary), var(--secondary));
+  border-radius: 3px;
+}
+
+/* ==== Form & Input Styles ==== */
 form {
   display: flex;
   flex-direction: column;
+  gap: 15px;
+  margin-bottom: 25px;
 }
 
-input, select, button {
-  margin: 5px 0;
-  padding: 10px;
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
   font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
 }
 
+input, select {
+  padding: 14px 16px;
+  font-size: 15px;
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--light);
+  transition: var(--transition);
+  outline: none;
+}
+
+input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+input:focus, select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.2);
+}
+
+/* ==== Button Styles ==== */
 button {
-  background: #4CAF50;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
+  font-weight: 500;
+  padding: 14px 20px;
   border: none;
+  border-radius: var(--border-radius);
   cursor: pointer;
-  border-radius: 5px;
-}
-
-button.logout {
-  background: #d9534f;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 button:hover {
-  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(58, 123, 213, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.1);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #28a745, #218838);
+}
+
+.btn-success:hover {
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+/* ==== Table Styles ==== */
+.table-container {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  margin: 20px 0;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+}
+
+th {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ==== Filter Section ==== */
+.filter-section {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.filter-section input {
+  flex: 1;
+}
+
+/* ==== Navigation Buttons ==== */
+.nav-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 25px;
+  justify-content: center; /* tombol rata tengah */
+}
+
+.nav-buttons button {
+  flex: 1;
+  min-width: 120px; /* biar ukurannya konsisten */
+}
+
+
+/* ==== Slip Styles ==== */
+.slip {
+  width: 100%;
+  max-width: 350px;
+  margin: 30px auto;
+  padding: 25px;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--border-radius);
+  font-family: 'Poppins', monospace;
+}
+
+.slip h2 {
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.slip h2::after {
+  display: none;
+}
+
+.slip .info div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.slip .item {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.slip .total {
+  border-top: 1px dashed rgba(255, 255, 255, 0.3);
   margin-top: 15px;
+  padding-top: 15px;
+  font-weight: 600;
 }
 
-table, th, td {
-  border: 1px solid #000000;
+.slip .history {
+  margin-top: 15px;
+  font-size: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.3);
+  padding-top: 10px;
 }
 
-th, td {
-  padding: 2px;
-  text-align: center;
+.slip .history h3 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.slip .history h3::after {
+  display: none; /* hilangkan garis bawah */
+}
+
+#qrcode {
+  margin: 15px auto;
+  width: fit-content;
+  padding: 10px;
+  background: white;
+  border-radius: 8px; /* biar QR-nya bulat */
+}
+
+.btn-container {
+  display: flex; /* biar tombol sejajar */
+  flex-wrap: wrap; /* biar tombol bisa turun baris */
+  gap: 12px; /* jarak antar tombol */
+  justify-content: center; /* tombol rata tengah */
+  margin-top: 25px; /* jarak atas */
+}
+
+.btn-container button {
+  flex: 1 1 200px;   /* tombol fleksibel tapi min 200px */
+  max-width: 250px; /* maksimal 250px */
+  text-align: center; /* teks di tengah */
+}
+
+/* ==== Utility Classes ==== */
+.text-center {
+  text-align: center;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ==== Animation ==== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* ==== Responsive Design ==== */
+@media (max-width: 576px) {
+  .container {
+    padding: 20px;
+    margin: 20px auto;
+  }
+  
+  .nav-buttons {
+    flex-direction: column;
+  }
+  
+  .filter-section {
+    flex-direction: column;
+  }
+  
+  .slip {
+    padding: 15px;
+  }
+}
+/* ==== Print Mode ==== */
+@media print {
+  body * {
+    visibility: hidden;      /* semua elemen disembunyikan */
+  }
+  #slip, #slip * {
+    visibility: visible;     /* hanya slip yang terlihat */
+  }
+  #slip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;             /* slip penuh halaman */
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    background: white;
+    color: black;            /* teks hitam agar lebih jelas di cetak */
+  }
+}
+
+/* Tombol aksi kecil di tabel */
+.table-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  padding: 3px 6px;
+  font-size: 11px;
+  border-radius: 250px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 12px;
+  justify-content: center;
+}
+
+.btn-sm svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+.btn-danger.btn-sm {
+  background: rgba(255, 107, 107, 0.15);
+  color: #ffffff;
+  border: 1px solid #ffffff;
+}
+
+.btn-danger.btn-sm:hover {
+  background: rgba(255, 107, 107, 0.25);
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(40, 167, 69, 0.95);
+  color: white;
+  padding: 12px 20px; /* padding lebih kecil */
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 9999;
+}
+
+.toast.show {
+  opacity: 1; 
+  transform: translateY(0); /* animasi muncul */
+}
+
+.toast.error {
+  background: rgba(220, 53, 69, 0.95); /* warna merah untuk error */
+}
+
+.toast.info {
+  background: rgba(23, 162, 184, 0.95); /* warna biru untuk info */
 }
