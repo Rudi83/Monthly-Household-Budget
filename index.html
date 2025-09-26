@@ -62,7 +62,7 @@
     // == Toast Notification ==
     function showToast(message, type = "success") {
       const toast = document.createElement("div");
-      toast.className = toast +type;
+      toast.className = "toast " + type; // ✅ benar
       document.body.appendChild(toast);
       toast.textContent = message;
       document.body.appendChild(toast);
