@@ -60,19 +60,18 @@
       const saldo = totalMasuk-totalKeluar;
 
       // Buat isi tabel transaksi
-      let rows = "";
-      transaksi.forEach((t, i) => {
-        rows += `
-          <tr>
+        let rows = "";
+        transaksi.forEach((t,i)=>{
+          const tanggal = t.tanggal ? (new Date(t.tanggal).toLocaleDateString('id-ID')) : '-';
+          rows += `<tr>
             <td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}</td>
-            <td style="border:1px solid #ccc; padding:6px;">${new Date(t.tanggal).toLocaleDateString('id-ID')}</td>
-            <td style="border:1px solid #ccc; padding:6px;">${t.keterangan}</td>
+            <td style="border:1px solid #ccc; padding:6px;">${tanggal}</td>
+            <td style="border:1px solid #ccc; padding:6px;">${t.keterangan || ''}</td>
             <td style="border:1px solid #ccc; padding:6px; text-align:right; color:${t.tipe==='masuk'?'green':'red'}">
-              ${t.tipe==='masuk'?'+':'-'} Rp ${t.jumlah.toLocaleString()}
+              ${t.tipe==='masuk'?'+':'-'} Rp ${Number(t.jumlah || 0).toLocaleString()}
             </td>
-          </tr>
-        `;
-      });
+          </tr>`;
+        });
 
       // Buat template HTML slip untuk PDF
       const htmlPDF = `
@@ -184,4 +183,5 @@
   </script>
 </body>
 </html>
+
 
