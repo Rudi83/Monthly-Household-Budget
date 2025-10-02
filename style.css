@@ -374,30 +374,51 @@ tr:hover {
   .slip {
     padding: 15px;
   }
-}
+} 
+
 /* ==== Print Mode ==== */
 @media print {
   body * {
     visibility: hidden;      /* semua elemen disembunyikan */
   }
-  #slip, #slip * {
+  #mainApp, #mainApp * {
     visibility: visible;     /* hanya slip yang terlihat */
   }
-  #slip {
+  #mainApp {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;             /* slip penuh halaman */
-    margin: 0;
-    padding: 0;
-    box-shadow: none;
-    border: none;
+    width: 100%;
+    max-width: 80mm;         /* ukuran slip kecil */
+    font-size: 12px;         /* font lebih kecil */
+    line-height: 1.4;
+    padding: 10px;
     background: white;
-    color: black;            /* teks hitam agar lebih jelas di cetak */
+    color: black;
+    border: none;
+    box-shadow: none;
+  }
+  /* ==== Tombol hilang saat print ==== */
+  .btn-container {
+    display: none !important;
+  }
+  #mainApp h2 {
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #000;
+    padding-bottom: 5px;
+  }
+  #mainApp .item,
+  #mainApp .info div,
+  #mainApp .total,
+  #mainApp .history {
+    font-size: 12px;
+    line-height: 1.4;
   }
 }
 
-/* Tombol aksi kecil di tabel */
+/* ==== Tombol aksi kecil di tabel ==== */
 .table-actions {
   display: flex;
   justify-content: center;
