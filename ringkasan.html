@@ -7,173 +7,179 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="slip fade-in" id="slip">
-    <h2>Slip Anggaran</h2>
+  <div id="loading" class="text-center" style="margin-top:50px;">⏳ Memeriksa sesi login...</div>
 
+  <div class="slip fade-in hidden" id="mainApp">
+    <h2>Slip Anggaran</h2>
     <div class="info">
       <div><span>User:</span> <span id="slip-user"></span></div>
       <div><span>Tanggal:</span> <span id="slip-tanggal"></span></div>
       <div><span>ID:</span> <span id="slip-id"></span></div>
     </div>
-    
     <div class="item"><span>Total Masuk:</span> <span id="slip-masuk">0</span></div>
     <div class="item"><span>Total Keluar:</span> <span id="slip-keluar">0</span></div>
     <div class="item total"><span>Saldo:</span> <span id="slip-saldo">0</span></div>
-    
-    <div class="history" id="history">
-      <h3>5 Transaksi Terakhir</h3>
-    </div>
-    
-    <div id="qrcode"></div>
-    
-    <p class="text-center" style="font-size:12px; margin-top: 15px;">-- Terima Kasih --</p>
-    <p style="text-align:right;font-size:10px;opacity:0.7;">By Nsr</p>
+    <div class="history" id="history"><h3>5 Transaksi Terakhir</h3></div>
   </div>
-
   <div class="btn-container">
-    <button onclick="window.location.href='index.html'" class="btn-secondary">
-      <span>Kembali</span>
-    </button>
-    <button onclick="window.print()" class="btn-success">
-      <span>Cetak Slip</span>
-    </button>
-    <button onclick="downloadQR()" class="btn-secondary">
-      <span>Download QR</span>
-    </button>
-    <button onclick="downloadPDF()" class="btn-success">
-      <span>Download Semua Data (PDF)</span>
-    </button>
-    <button class="logout btn-danger" onclick="logout()">
-      <span>Logout</span>
-    </button>
-  </div>
+  <button onclick="window.location.href='index.html'" class="btn-secondary"><span>Kembali</span></button>
+  <button onclick="cetakSlip()" class="btn-secondary">🖨️ Cetak Slip</button>
+  <button onclick="downloadPDF()" class="btn-success">⬇️ Download PDF</button>
+</div>
 
-  <!-- Library eksternal -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script> 
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 
   <script>
-    const loginUser = localStorage.getItem("loginUser");
-    if (!loginUser) window.location.href = "login.html";
+    // Cetak slip langsung ke printer
+    function cetakSlip() {
+      window.print();
+    }
 
-    const keyTransaksi = "transaksi_" + loginUser;
-    const transaksi = JSON.parse(localStorage.getItem(keyTransaksi)) || [];
+    // Download slip jadi PDF (versi daftar transaksi)
+    async function downloadPDF() {
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        alert("❌ Anda harus login dulu.");
+        return;
+      }
 
-    // cek apakah ada slipId dari URL
-    const urlParams = new URLSearchParams(window.location.search);
-    let slipId = urlParams.get("id");
+      // Ambil data transaksi dari Firestore
+      const snapshot = await db.collection("transaksi")
+        .where("userId", "==", user.uid)
+        .orderBy("createdAt", "desc")
+        .get();
 
-    let slipData;
-    if (slipId && localStorage.getItem("slip_" + slipId)) {
-      // jika slipId ada di localStorage, pakai data lama
-      slipData = JSON.parse(localStorage.getItem("slip_" + slipId));
-    } else {
-      // kalau tidak ada slipId, buat slip baru
-      slipId = "TX-" + Date.now().toString().slice(-6);
-
+      const transaksi = snapshot.docs.map(doc => doc.data());
       const totalMasuk = transaksi.filter(t => t.tipe==="masuk").reduce((a,b)=>a+b.jumlah,0);
       const totalKeluar = transaksi.filter(t => t.tipe==="keluar").reduce((a,b)=>a+b.jumlah,0);
-      const saldo = totalMasuk - totalKeluar;
+      const saldo = totalMasuk-totalKeluar;
 
-      slipData = {
-        user: loginUser,
-        tanggal: new Date().toLocaleString("id-ID"),
-        id: slipId,
-        totalMasuk,
-        totalKeluar,
-        saldo,
-        transaksi
+      // Buat isi tabel transaksi
+      let rows = "";
+      transaksi.forEach((t, i) => {
+        rows += `
+          <tr>
+            <td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}</td>
+            <td style="border:1px solid #ccc; padding:6px;">${new Date(t.tanggal).toLocaleDateString('id-ID')}</td>
+            <td style="border:1px solid #ccc; padding:6px;">${t.keterangan}</td>
+            <td style="border:1px solid #ccc; padding:6px; text-align:right; color:${t.tipe==='masuk'?'green':'red'}">
+              ${t.tipe==='masuk'?'+':'-'} Rp ${t.jumlah.toLocaleString()}
+            </td>
+          </tr>
+        `;
+      });
+
+      // Buat template HTML slip untuk PDF
+      const htmlPDF = `
+        <div style="font-family: Arial, sans-serif; padding:20px; color:#000;">
+          <h2 style="text-align:center; margin-bottom:5px;">Daftar Transaksi</h2>
+          <p style="text-align:center; margin:0;">${new Date().toLocaleString("id-ID")}</p>
+          <hr style="margin:15px 0;">
+          
+          <p><b>User:</b> ${user.email}</p>
+          <p><b>ID Slip:</b> TX-${Date.now().toString().slice(-6)}</p>
+          
+          <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:13px;">
+            <tr style="background:#f2f2f2;">
+              <th style="border:1px solid #ccc; padding:6px;">No</th>
+              <th style="border:1px solid #ccc; padding:6px;">Tanggal</th>
+              <th style="border:1px solid #ccc; padding:6px;">Keterangan</th>
+              <th style="border:1px solid #ccc; padding:6px;">Jumlah</th>
+            </tr>
+            ${rows}
+          </table>
+
+          <hr style="margin:15px 0;">
+          <table style="width:100%; border-collapse:collapse; font-size:13px;">
+            <tr>
+              <td style="border:1px solid #ccc; padding:6px;">Total Masuk</td>
+              <td style="border:1px solid #ccc; padding:6px;">Rp ${totalMasuk.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td style="border:1px solid #ccc; padding:6px;">Total Keluar</td>
+              <td style="border:1px solid #ccc; padding:6px;">Rp ${totalKeluar.toLocaleString()}</td>
+            </tr>
+            <tr style="font-weight:bold; background:#f9f9f9;">
+              <td style="border:1px solid #ccc; padding:6px;">Saldo</td>
+              <td style="border:1px solid #ccc; padding:6px;">Rp ${saldo.toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+      `;
+
+      // Export ke PDF
+      const opt = {
+        margin:       0.5,
+        filename:     'daftar-transaksi.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
       };
-
-      // simpan slip ke localStorage
-      localStorage.setItem("slip_" + slipId, JSON.stringify(slipData));
+      html2pdf().set(opt).from(htmlPDF).save();
     }
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyBrspKOn3db7J5rpehHu8VCGIgPdQBcLls",
+      authDomain: "anggaran-rumah-tangga.firebaseapp.com",
+      projectId: "anggaran-rumah-tangga",
+      storageBucket: "anggaran-rumah-tangga.appspot.com",
+      messagingSenderId: "681556356369",
+      appId: "1:681556356369:web:6ddd11deba0033791bb0b0"
+    };
 
-    // tampilkan data slip
-    document.getElementById("slip-user").textContent = slipData.user;
-    document.getElementById("slip-tanggal").textContent = slipData.tanggal;
-    document.getElementById("slip-id").textContent = slipData.id;
-    document.getElementById("slip-masuk").textContent = "Rp " + slipData.totalMasuk.toLocaleString();
-    document.getElementById("slip-keluar").textContent = "Rp " + slipData.totalKeluar.toLocaleString();
-    document.getElementById("slip-saldo").textContent = "Rp " + slipData.saldo.toLocaleString();
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    // tampilkan 5 transaksi terakhir
-    const lastTrx = slipData.transaksi.slice(-5).reverse();
-    const historyDiv = document.getElementById("history");
-    if (lastTrx.length === 0) {
-      historyDiv.innerHTML += "<div class='text-center'>Belum ada transaksi</div>";
-    } else {
-      lastTrx.forEach(t => {
-        historyDiv.innerHTML += `
-          <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-            <span>${new Date(t.tanggal).toLocaleDateString('id-ID')} - ${t.keterangan}</span>
-            <span style="color:${t.tipe==="masuk" ? '#28a745' : '#ff6b6b'}">
-              ${t.tipe==="masuk" ? "+" : "-"}Rp ${t.jumlah.toLocaleString()}
-            </span>
-          </div>`;
-      });
-    }
+    auth.onAuthStateChanged(async user => {
+      const loading = document.getElementById("loading");
+      const mainApp = document.getElementById("mainApp");
 
-    // buat QR code berisi link ke slip ini
-    const baseUrl = window.location.origin + window.location.pathname.replace("ringkasan.html", "");
-    const qrLink = baseUrl + "ringkasan.html?id=" + slipData.id;
-
-    const qrcodeContainer = document.getElementById("qrcode");
-    new QRCode(qrcodeContainer, { 
-      text: qrLink, 
-      width: 160, 
-      height: 160,
-      colorDark: "#000000",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
-    });
-
-    // download QR
-    function downloadQR() {
-      const img = qrcodeContainer.querySelector("img") || qrcodeContainer.querySelector("canvas");
-      if (img) {
-        const link = document.createElement("a");
-        link.href = img.src || img.toDataURL("image/png");
-        link.download = slipData.id + "_QRCode.png";
-        link.click();
-      }
-    }
-
-    // download semua data ke PDF
-    function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      doc.setFontSize(14);
-      doc.text("Daftar Transaksi - " + loginUser, 14, 20);
-
-      const rows = slipData.transaksi.map((t, i) => [
-        i + 1,
-        t.tipe === "masuk" ? "Masuk" : "Keluar",
-        "Rp " + t.jumlah.toLocaleString(),
-        t.keterangan,
-        new Date(t.tanggal).toLocaleDateString("id-ID")
-      ]);
-
-      doc.autoTable({
-        startY: 30,
-        head: [["No", "Tipe", "Jumlah", "Keterangan", "Tanggal"]],
-        body: rows,
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [58, 123, 213] },
-        theme: "grid"
-      });
-
-      doc.save("transaksi_" + loginUser + ".pdf");
-    }
-
-    function logout() {
-      if (confirm("Apakah Anda yakin ingin logout?")) {
-        localStorage.removeItem("loginUser");
+      if (!user) {
         window.location.href = "login.html";
+        return;
       }
-    }
+
+      loading.style.display = "none";
+      mainApp.classList.remove("hidden");
+
+      const snapshot = await db.collection("transaksi")
+        .where("userId", "==", user.uid)
+        .orderBy("createdAt", "desc")
+        .get();
+
+      const transaksi = snapshot.docs.map(doc => doc.data());
+      const totalMasuk = transaksi.filter(t => t.tipe==="masuk").reduce((a,b)=>a+b.jumlah,0);
+      const totalKeluar = transaksi.filter(t => t.tipe==="keluar").reduce((a,b)=>a+b.jumlah,0);
+      const saldo = totalMasuk-totalKeluar;
+
+      document.getElementById("slip-user").textContent = user.email;
+      document.getElementById("slip-tanggal").textContent = new Date().toLocaleString("id-ID");
+      document.getElementById("slip-id").textContent = "TX-" + Date.now().toString().slice(-6);
+      document.getElementById("slip-masuk").textContent = "Rp " + totalMasuk.toLocaleString();
+      document.getElementById("slip-keluar").textContent = "Rp " + totalKeluar.toLocaleString();
+      document.getElementById("slip-saldo").textContent = "Rp " + saldo.toLocaleString();
+
+      const lastTrx = transaksi.slice(0,5);
+      const historyDiv = document.getElementById("history");
+      if (lastTrx.length === 0) {
+        historyDiv.innerHTML += "<div class='text-center'>Belum ada transaksi</div>";
+      } else {
+        lastTrx.forEach(t=>{
+          historyDiv.innerHTML += `
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+              <span>${new Date(t.tanggal).toLocaleDateString('id-ID')} - ${t.keterangan}</span>
+              <span style="color:${t.tipe==='masuk'?'#28a745':'#ff6b6b'}">
+                ${t.tipe==='masuk'?'+':'-'}Rp ${t.jumlah.toLocaleString()}
+              </span>
+            </div>`;
+        });
+      }
+    });
   </script>
 </body>
 </html>
