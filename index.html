@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anggaran Rumah Tangga</title>
+  <link rel="icon" type="png" href="ft/acc1.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container fade-in">
+  <div id="loading" class="text-center" style="margin-top:50px;">⏳ Memeriksa sesi login...</div>
+
+  <div class="container fade-in hidden" id="mainApp">
     <h2>Input Anggaran</h2>
     <form id="formTransaksi">
       <div class="input-group">
@@ -33,93 +36,91 @@
         <input type="date" id="tanggal" required>
       </div>
       
-      <button type="submit" class="btn-success">
-        <span id="btnText">Tambah Transaksi</span>
-      </button>
+      <button type="submit" class="btn-success">Tambah Transaksi</button>
     </form>
 
     <div class="nav-buttons">
-      <button onclick="window.location.href='transaksi.html'" class="btn-secondary">
-        <span>Lihat Daftar Transaksi</span>
-      </button>
-      <button onclick="window.location.href='ringkasan.html'" class="btn-secondary">
-        <span>Lihat Ringkasan</span>
-      </button>
-      <button class="logout btn-danger" onclick="logout()">
-        <span>Logout</span>
-      </button>
+      <button onclick="window.location.href='transaksi.html'" class="btn-secondary">Lihat Daftar Transaksi</button>
+      <button onclick="window.location.href='ringkasan.html'" class="btn-secondary">Lihat Ringkasan</button>
+      <button class="logout btn-danger" onclick="logout()">Logout</button>
     </div>
   </div>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
   <script>
-    const loginUser = localStorage.getItem("loginUser");
-    if (!loginUser) window.location.href = "login.html";
+    const firebaseConfig = {
+      apiKey: "AIzaSyBrspKOn3db7J5rpehHu8VCGIgPdQBcLls",
+      authDomain: "anggaran-rumah-tangga.firebaseapp.com",
+      projectId: "anggaran-rumah-tangga",
+      storageBucket: "anggaran-rumah-tangga.appspot.com",
+      messagingSenderId: "681556356369",
+      appId: "1:681556356369:web:6ddd11deba0033791bb0b0"
+    };
 
-    const keyTransaksi = "transaksi_" + loginUser;
-    let transaksi = JSON.parse(localStorage.getItem(keyTransaksi)) || [];
-    let editIndex = null; // index transaksi yang sedang diedit
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    // == Toast Notification ==
-    function showToast(message, type = "success") {
-      const toast = document.createElement("div");
-      toast.className = "toast " + type; // ✅ benar
-      document.body.appendChild(toast);
-      toast.textContent = message;
-      document.body.appendChild(toast);
+    // 🔒 Pastikan session LOCAL
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(() => {
+        auth.onAuthStateChanged(user => {
+          console.log("🔥 onAuthStateChanged:", user);
+          const loading = document.getElementById("loading");
+          const mainApp = document.getElementById("mainApp");
 
-      setTimeout(() => toast.classList.add("show"), 100); // delay untuk animasi
-      setTimeout(() => {
-        toast.classList.remove("show");
-        setTimeout(() => document.body.removeChild(toast), 300); // hapus setelah animasi
-      }, 2500);
-    }
+          if (user) {
+            console.log("✅ User login:", user.email);
+            loading.style.display = "none";
+            mainApp.classList.remove("hidden");
+            document.getElementById("tanggal").valueAsDate = new Date();
+          } else {
+            console.warn("❌ Belum login → redirect login.html");
+            window.location.href = "login.html";
+          }
+        });
+      })
+      .catch(err => console.error("❌ Persistence error:", err));
 
-    // cek apakah ada data edit
-    const editData = localStorage.getItem("editData");
-    if (editData) {
-      const t = JSON.parse(editData);
-      document.getElementById("tipe").value = t.tipe;
-      document.getElementById("jumlah").value = t.jumlah;
-      document.getElementById("keterangan").value = t.keterangan;
-      document.getElementById("tanggal").value = t.tanggal;
-
-      document.getElementById("btnText").textContent = "Update Transaksi";
-      editIndex = transaksi.length; // posisi terakhir karena sudah di-splice di transaksi.html
-      localStorage.removeItem("editData");
-    } else {
-      document.getElementById("tanggal").valueAsDate = new Date(); // default hari ini
-    }
-
-    // Simpan transaksi
-    document.getElementById("formTransaksi").addEventListener("submit", function(e) {
+    // === Simpan transaksi ===
+    document.getElementById("formTransaksi").addEventListener("submit", async function(e) {
       e.preventDefault();
       const tipe = document.getElementById("tipe").value;
       const jumlah = parseFloat(document.getElementById("jumlah").value);
       const keterangan = document.getElementById("keterangan").value;
       const tanggal = document.getElementById("tanggal").value;
 
-      if (editIndex !== null) {
-        // mode update
-        transaksi.splice(editIndex, 0, { tipe, jumlah, keterangan, tanggal });
-        editIndex = null;
-        document.getElementById("btnText").textContent = "Tambah Transaksi";
-        alert("Transaksi berhasil diperbarui!");
-      } else {
-        // mode tambah baru
-        transaksi.push({ tipe, jumlah, keterangan, tanggal });
-        alert("Transaksi berhasil ditambahkan!");
-      }
+      const user = auth.currentUser;
+      if (!user) return alert("❌ Anda harus login dulu.");
 
-      localStorage.setItem(keyTransaksi, JSON.stringify(transaksi));
-      this.reset();
-      document.getElementById("tanggal").valueAsDate = new Date();
+      try {
+        await db.collection("transaksi").add({
+          userId: user.uid,
+          tipe,
+          jumlah,
+          keterangan,
+          tanggal,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("✅ Transaksi tersimpan!");
+        this.reset();
+        document.getElementById("tanggal").valueAsDate = new Date();
+      } catch (err) {
+        console.error("❌ Error simpan:", err);
+        alert("❌ " + err.message);
+      }
     });
 
-    // === Logout ===
     function logout() {
-      if (confirm("Apakah Anda yakin ingin logout?")) {
-        localStorage.removeItem("loginUser");
-        window.location.href = "login.html";
+      if (confirm("Yakin logout?")) {
+        auth.signOut().then(() => {
+          console.log("👋 Logout berhasil");
+          window.location.href = "login.html";
+        });
       }
     }
   </script>
