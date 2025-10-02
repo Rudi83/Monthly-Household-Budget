@@ -7,7 +7,9 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container fade-in">
+  <div id="loading" class="text-center" style="margin-top:50px;">⏳ Memeriksa sesi login...</div>
+
+  <div class="container fade-in hidden" id="mainApp">
     <h2>Daftar Transaksi</h2>
 
     <h3>Filter Transaksi</h3>
@@ -32,76 +34,91 @@
     </div>
 
     <div class="nav-buttons">
-      <button onclick="window.location.href='index.html'" class="btn-secondary">
-        <span>Kembali ke Input</span>
-      </button>
-      <button onclick="window.location.href='ringkasan.html'" class="btn-secondary">
-        <span>Lihat Ringkasan</span>
-      </button>
+      <button onclick="window.location.href='index.html'" class="btn-secondary">Kembali ke Input</button>
+      <button onclick="window.location.href='ringkasan.html'" class="btn-secondary">Lihat Ringkasan</button>
     </div>
   </div>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
   <script>
-    const loginUser = localStorage.getItem("loginUser");
-    if (!loginUser) window.location.href = "login.html";
+    const firebaseConfig = {
+      apiKey: "AIzaSyBrspKOn3db7J5rpehHu8VCGIgPdQBcLls",
+      authDomain: "anggaran-rumah-tangga.firebaseapp.com",
+      projectId: "anggaran-rumah-tangga",
+      storageBucket: "anggaran-rumah-tangga.appspot.com",
+      messagingSenderId: "681556356369",
+      appId: "1:681556356369:web:6ddd11deba0033791bb0b0"
+    };
 
-    const keyTransaksi = "transaksi_" + loginUser;
-    let transaksi = JSON.parse(localStorage.getItem(keyTransaksi)) || [];
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    function tampilkanData() {
+    let transaksiData = [];
+
+    async function tampilkanData() {
       const filter = document.getElementById("filter").value.toLowerCase();
       const tbody = document.querySelector("#tabelTransaksi tbody");
       tbody.innerHTML = "";
 
-      const filteredData = transaksi.filter(t => t.keterangan.toLowerCase().includes(filter));
-      
-      if (filteredData.length === 0) {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const snapshot = await db.collection("transaksi")
+        .where("userId", "==", user.uid)
+        .orderBy("createdAt", "desc")
+        .get();
+
+      transaksiData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      const filtered = transaksiData.filter(t =>
+        t.keterangan.toLowerCase().includes(filter)
+      );
+
+      if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="text-center">Tidak ada transaksi</td></tr>`;
         return;
       }
 
-      filteredData.forEach((t) => {
-        const realIndex = transaksi.findIndex(item => 
-          item.tipe === t.tipe &&
-          item.jumlah === t.jumlah &&
-          item.keterangan === t.keterangan &&
-          item.tanggal === t.tanggal
-        );
-
+      filtered.forEach(t => {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${t.tipe === 'masuk' ? '✅ Masuk' : '❌ Keluar'}</td>
           <td>Rp ${t.jumlah.toLocaleString()}</td>
           <td>${t.keterangan}</td>
           <td>${new Date(t.tanggal).toLocaleDateString('id-ID')}</td>
-          <td>
-            <div class="table-actions">
-              <button onclick="editTransaksi(${realIndex})" class="btn-secondary btn-sm">✏️ Edit</button>
-              <button onclick="hapusTransaksi(${realIndex})" class="btn-danger btn-sm">🗑️ Hapus</button>
-            </div>
-          </td>
+          <td><button onclick="hapusTransaksi('${t.id}')" class="btn-danger btn-sm">🗑️</button></td>
         `;
         tbody.appendChild(row);
       });
     }
 
-    function editTransaksi(index) {
-      const t = transaksi[index];
-      localStorage.setItem("editData", JSON.stringify(t));
-      transaksi.splice(index, 1);
-      localStorage.setItem(keyTransaksi, JSON.stringify(transaksi));
-      window.location.href = "index.html";
-    }
-
-    function hapusTransaksi(index) {
+    async function hapusTransaksi(id) {
       if (confirm("Yakin ingin menghapus transaksi ini?")) {
-        transaksi.splice(index, 1);
-        localStorage.setItem(keyTransaksi, JSON.stringify(transaksi));
+        await db.collection("transaksi").doc(id).delete();
         tampilkanData();
       }
     }
 
-    tampilkanData();
+    auth.onAuthStateChanged(user => {
+      const loading = document.getElementById("loading");
+      const mainApp = document.getElementById("mainApp");
+
+      if (user) {
+        loading.style.display = "none";
+        mainApp.classList.remove("hidden");
+        tampilkanData();
+      } else {
+        window.location.href = "login.html";
+      }
+    });
   </script>
 </body>
 </html>
