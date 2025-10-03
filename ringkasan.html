@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slip Anggaran</title>
-  <link rel="icon" type="png" href="acc1.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -48,10 +47,13 @@
         return;
       }
 
+      // Ambil namaUser dari koleksi users
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      const namaUser = userDoc.exists ? userDoc.data().nama : "-";
+
       // Ambil data transaksi dari Firestore
       const snapshot = await db.collection("transaksi")
         .where("userId", "==", user.uid)
-        .orderBy("createdAt", "desc")
         .get();
 
       const transaksi = snapshot.docs.map(doc => doc.data());
@@ -60,59 +62,68 @@
       const saldo = totalMasuk-totalKeluar;
 
       // Buat isi tabel transaksi
-        let rows = "";
-        transaksi.forEach((t,i)=>{
-          const tanggal = t.tanggal ? (new Date(t.tanggal).toLocaleDateString('id-ID')) : '-';
-          rows += `<tr>
+      let rows = "";
+      transaksi.forEach((t, i) => {
+        rows += `
+          <tr>
             <td style="border:1px solid #ccc; padding:6px; text-align:center;">${i+1}</td>
-            <td style="border:1px solid #ccc; padding:6px;">${tanggal}</td>
-            <td style="border:1px solid #ccc; padding:6px;">${t.keterangan || ''}</td>
+            <td style="border:1px solid #ccc; padding:6px;">${new Date(t.tanggal).toLocaleDateString('id-ID')}</td>
+            <td style="border:1px solid #ccc; padding:6px;">${t.keterangan}</td>
             <td style="border:1px solid #ccc; padding:6px; text-align:right; color:${t.tipe==='masuk'?'green':'red'}">
-              ${t.tipe==='masuk'?'+':'-'} Rp ${Number(t.jumlah || 0).toLocaleString()}
+              ${t.tipe==='masuk'?'+':'-'} Rp ${t.jumlah.toLocaleString()}
             </td>
-          </tr>`;
-        });
+          </tr>
+        `;
+      });
 
       // Buat template HTML slip untuk PDF
-        const htmlPDF = `
-          <div style="font-family: Arial, sans-serif; padding:20px; color:#000;">
-            <h2 style="text-align:center; margin-bottom:5px;">Daftar Transaksi</h2>
-            <p style="text-align:center; margin:0;">${new Date().toLocaleString("id-ID")}</p>
-            <hr style="margin:15px 0;">
-            <p><b>User:</b> ${user.email}</p>
-            <p><b>ID Slip:</b> TX-${Date.now().toString().slice(-6)}</p>
-            <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:13px;">
-              <tr style="background:#f2f2f2;">
-                <th style="border:1px solid #ccc; padding:6px;">No</th>
-                <th style="border:1px solid #ccc; padding:6px;">Tanggal</th>
-                <th style="border:1px solid #ccc; padding:6px;">Keterangan</th>
-                <th style="border:1px solid #ccc; padding:6px;">Jumlah</th>
-              </tr>
-              ${rows}
-            </table>
-            <hr style="margin:15px 0;">
-            <table style="width:100%; border-collapse:collapse; font-size:13px;">
-              <tr><td style="border:1px solid #ccc; padding:6px;">Total Masuk</td><td style="border:1px solid #ccc; padding:6px;">Rp ${totalMasuk.toLocaleString()}</td></tr>
-              <tr><td style="border:1px solid #ccc; padding:6px;">Total Keluar</td><td style="border:1px solid #ccc; padding:6px;">Rp ${totalKeluar.toLocaleString()}</td></tr>
-              <tr style="font-weight:bold; background:#f9f9f9;"><td style="border:1px solid #ccc; padding:6px;">Saldo</td><td style="border:1px solid #ccc; padding:6px;">Rp ${saldo.toLocaleString()}</td></tr>
-            </table>
-          </div>
-        `;
+      const htmlPDF = `
+        <div style="font-family: Arial, sans-serif; padding:20px; color:#000;">
+          <h2 style="text-align:center; margin-bottom:5px;">Daftar Transaksi</h2>
+          <p style="text-align:center; margin:0;">${new Date().toLocaleString("id-ID")}</p>
+          <hr style="margin:15px 0;">
+          
+          <p><b>Nama Aplikasi:</b> Anggaran Rumah Tangga</p>
+          <p><b>Nama Pengguna:</b> ${namaUser}</p>
+          <p><b>ID Slip:</b> TX-${Date.now().toString().slice(-6)}</p>
+          
+          <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:13px;">
+            <tr style="background:#f2f2f2;">
+              <th style="border:1px solid #ccc; padding:6px;">No</th>
+              <th style="border:1px solid #ccc; padding:6px;">Tanggal</th>
+              <th style="border:1px solid #ccc; padding:6px;">Keterangan</th>
+              <th style="border:1px solid #ccc; padding:6px;">Jumlah</th>
+            </tr>
+            ${rows}
+          </table>
+
+          <hr style="margin:15px 0;">
+          <table style="width:100%; border-collapse:collapse; font-size:13px;">
+            <tr>
+              <td style="border:1px solid #ccc; padding:6px;">Total Masuk</td>
+              <td style="border:1px solid #ccc; padding:6px;">Rp ${totalMasuk.toLocaleString()}</td>
+            </tr>
+            <tr>
+              <td style="border:1px solid #ccc; padding:6px;">Total Keluar</td>
+              <td style="border:1px solid #ccc; padding:6px;">Rp ${totalKeluar.toLocaleString()}</td>
+            </tr>
+            <tr style="font-weight:bold; background:#f9f9f9;">
+              <td style="border:1px solid #ccc; padding:6px;">Saldo</td>
+              <td style="border:1px solid #ccc; padding:6px;">Rp ${saldo.toLocaleString()}</td>
+            </tr>
+          </table>
+        </div>
+      `;
 
       // Export ke PDF
-        const opt = {
-          margin: 0.5,
-          filename: 'daftar-transaksi.pdf',
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(htmlPDF).save();
-
-      } catch (err) {
-        console.error("Gagal generate PDF:", err);
-        alert("Gagal generate PDF. Cek console untuk detail.");
-      }
+      const opt = {
+        margin:       0.5,
+        filename:     'daftar-transaksi.pdf',
+        image:        { type: 'jpeg', quality: 1.0 }, // Tingkat kualitas gambar
+        html2canvas:  { scale: 4 }, // Resolusi lebih tinggi
+        jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(htmlPDF).save();
     }
     
     const firebaseConfig = {
@@ -123,6 +134,7 @@
       messagingSenderId: "681556356369",
       appId: "1:681556356369:web:6ddd11deba0033791bb0b0"
     };
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -138,19 +150,19 @@
 
       loading.style.display = "none";
       mainApp.classList.remove("hidden");
-      console.log("✅ User login:", user.uid, user.email);
 
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      const namaUser = userDoc.exists ? userDoc.data().nama : "-";
       const snapshot = await db.collection("transaksi")
         .where("userId", "==", user.uid)
-        .orderBy("createdAt", "desc")
         .get();
-
+        
       const transaksi = snapshot.docs.map(doc => doc.data());
       const totalMasuk = transaksi.filter(t => t.tipe==="masuk").reduce((a,b)=>a+b.jumlah,0);
       const totalKeluar = transaksi.filter(t => t.tipe==="keluar").reduce((a,b)=>a+b.jumlah,0);
       const saldo = totalMasuk-totalKeluar;
 
-      document.getElementById("slip-user").textContent = user.email;
+      document.getElementById("slip-user").textContent = namaUser; // Nama pengguna
       document.getElementById("slip-tanggal").textContent = new Date().toLocaleString("id-ID");
       document.getElementById("slip-id").textContent = "TX-" + Date.now().toString().slice(-6);
       document.getElementById("slip-masuk").textContent = "Rp " + totalMasuk.toLocaleString();
@@ -176,6 +188,3 @@
   </script>
 </body>
 </html>
-
-
-
