@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login Anggaran</title>
-  <link rel="icon" type="png" href="acc1.png">
+  <link rel="icon" type="png" href="ft/acc1.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,8 +12,9 @@
     <h2>Login / Register</h2>
     <form id="loginForm">
       <div class="input-group">
-        <label for="username">Email</label>
+        <label for="Email">Email</label>
         <input type="email" id="username" placeholder="Masukkan email" required>
+        <input type="text" id="nama" placeholder="Masukkan nama" required>
       </div>
       
       <div class="input-group">
@@ -60,8 +61,19 @@
         window.register = async function register() {
           const email = document.getElementById("username").value.trim();
           const password = document.getElementById("password").value.trim();
+          const nama = document.getElementById("nama").value.trim();
+          
           try {
-            await auth.createUserWithEmailAndPassword(email, password);
+            const userCred = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCred.user; 
+          
+            // Simpan data user di Firestore
+            await db.collection("users").doc(user.uid).set({
+              email: email,
+              nama: nama,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
             alert("✅ Akun berhasil dibuat. Silakan login.");
           } catch (err) {
             alert("❌ " + err.message);
@@ -87,5 +99,3 @@
   </script>
 </body>
 </html>
-
-
