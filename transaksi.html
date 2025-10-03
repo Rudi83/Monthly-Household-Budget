@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Daftar Transaksi</title>
-  <link rel="icon" type="png" href="acc1.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -71,7 +70,6 @@
 
       const snapshot = await db.collection("transaksi")
         .where("userId", "==", user.uid)
-        .orderBy("createdAt", "desc")
         .get();
 
       transaksiData = snapshot.docs.map(doc => ({
@@ -80,7 +78,7 @@
       }));
 
       const filtered = transaksiData.filter(t =>
-        t.keterangan.toLowerCase().includes(filter)
+        t.keterangan && t.keterangan.toLowerCase().includes(filter)
       );
 
       if (filtered.length === 0) {
@@ -94,7 +92,7 @@
           <td>${t.tipe === 'masuk' ? '✅ Masuk' : '❌ Keluar'}</td>
           <td>Rp ${t.jumlah.toLocaleString()}</td>
           <td>${t.keterangan}</td>
-          <td>${new Date(t.tanggal).toLocaleDateString('id-ID')}</td>
+          <td>${t.tanggal ? new Date(t.tanggal).toLocaleDateString('id-ID'): "-" }</td>
           <td><button onclick="hapusTransaksi('${t.id}')" class="btn-danger btn-sm">🗑️</button></td>
         `;
         tbody.appendChild(row);
@@ -123,4 +121,3 @@
   </script>
 </body>
 </html>
-
