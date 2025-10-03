@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Anggaran Rumah Tangga</title>
-  <link rel="icon" type="png" href="acc1.png">
+  <link rel="icon" type="png" href="ft/acc1.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -104,7 +104,8 @@
           jumlah,
           keterangan,
           tanggal,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createAtMillis: Date.now() // Untuk sorting tanpa index
         });
         alert("✅ Transaksi tersimpan!");
         this.reset();
@@ -126,4 +127,3 @@
   </script>
 </body>
 </html>
-
