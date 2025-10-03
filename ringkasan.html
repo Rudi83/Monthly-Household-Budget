@@ -80,7 +80,7 @@
       // Buat template HTML slip untuk PDF
       const htmlPDF = `
         <div style="font-family: Arial, sans-serif; padding:20px; color:#000;">
-          <h2 style="text-align:center; margin-bottom:5px;">Daftar Transaksi</h2>
+          <h2 style="text-align:center; margin-bottom:5px; color:black">Daftar Transaksi</h2>
           <p style="text-align:center; margin:0;">${new Date().toLocaleString("id-ID")}</p>
           <hr style="margin:15px 0;">
           
@@ -90,10 +90,10 @@
           
           <table style="width:100%; border-collapse:collapse; margin-top:15px; font-size:13px;">
             <tr style="background:#f2f2f2;">
-              <th style="border:1px solid #ccc; padding:6px;">No</th>
-              <th style="border:1px solid #ccc; padding:6px;">Tanggal</th>
-              <th style="border:1px solid #ccc; padding:6px;">Keterangan</th>
-              <th style="border:1px solid #ccc; padding:6px;">Jumlah</th>
+              <th style="border:1px solid #ccc; padding:6px; text-align:center; color: black ">No</th>
+              <th style="border:1px solid #ccc; padding:6px; color: black">Tanggal</th>
+              <th style="border:1px solid #ccc; padding:6px; color: black">Keterangan</th>
+              <th style="border:1px solid #ccc; padding:6px; color: black">Jumlah</th>
             </tr>
             ${rows}
           </table>
@@ -189,4 +189,5 @@
   </script>
 </body>
 </html>
+
 
