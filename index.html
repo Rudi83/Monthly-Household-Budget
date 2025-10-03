@@ -100,10 +100,10 @@
       try {
         await db.collection("transaksi").add({
           userId: user.uid,
-          tipe,
+          tipe:document.querySelector("input[name='tipe']:checked").value,
           jumlah,
-          keterangan,
-          tanggal,
+          keterangan: document.getElementById("keterangan").value,
+          tanggal: document.getElementById("tanggal").value,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           createAtMillis: Date.now() // Untuk sorting tanpa index
         });
@@ -127,4 +127,3 @@
   </script>
 </body>
 </html>
-
