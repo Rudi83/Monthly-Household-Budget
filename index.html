@@ -100,13 +100,14 @@
       try {
         await db.collection("transaksi").add({
           userId: user.uid,
-          tipe:document.querySelector("input[name='tipe']:checked").value,
+          tipe:document.getElementById("tipe").value,
           jumlah,
           keterangan: document.getElementById("keterangan").value,
           tanggal: document.getElementById("tanggal").value,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          createAtMillis: Date.now() // Untuk sorting tanpa index
+          createdAtMillis: Date.now() // Untuk sorting tanpa index
         });
+        
         alert("✅ Transaksi tersimpan!");
         this.reset();
         document.getElementById("tanggal").valueAsDate = new Date();
@@ -127,3 +128,4 @@
   </script>
 </body>
 </html>
+
