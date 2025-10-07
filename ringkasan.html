@@ -128,8 +128,9 @@
         margin:       0.5,
         filename:     'daftar-transaksi.pdf',
         image:        { type: 'jpeg', quality: 1.0 }, // Tingkat kualitas gambar
-        html2canvas:  { scale: 4 }, // Resolusi lebih tinggi
-        jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }
+        html2canvas:  { scale: 4, scrollY:0, useCORS: true }, // Resolusi lebih tinggi
+        jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }, 
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } // Hindari pemotongan tabel 
       };
       html2pdf().set(opt).from(htmlPDF).save();
     }
