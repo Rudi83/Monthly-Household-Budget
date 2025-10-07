@@ -81,7 +81,7 @@
       // Urutan berdasarkan tanggal terbaru
       transaksiData.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
 
-      const filtered = transaksiData.filter(t =>
+     const filtered = transaksiData.filter(t =>
         t.keterangan && t.keterangan.toLowerCase().includes(filter)
       );
 
