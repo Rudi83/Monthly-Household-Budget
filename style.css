@@ -492,31 +492,6 @@ tr:hover {
     margin-top: 10px;
   }
 
-  thead {
-    display: table-header-group; /* Header muncul di setiap halaman PDF */
-    background: #f2f2f2;
-  }
-
-  th, td {
-    border: 1px solid #ccc;
-    padding: 6px 8px;
-    vertical-align: middle;
-  }
-
-  th {
-    font-weight: 600;
-    color: #000;
-    text-align: center;
-  }
-
-  td {
-    color: #000;
-  }
-
-  tr:nth-child(even) {
-    background: #fafafa;
-  }
-
   /* Hindari tabel terpotong di tengah halaman */
   tr, td, th {
     page-break-inside: avoid !important;
@@ -526,22 +501,5 @@ tr:hover {
   tr {
     page-break-after: auto;
   }
-
-  /* Tambahan margin antar bagian di PDF */
-  hr {
-    margin: 15px 0;
-  }
-
-  /* Penyesuaian layout slip PDF */
-  .slip, #mainApp {
-    background: white;
-    color: black;
-    box-shadow: none;
-  }
-
-  /* Agar judul & teks PDF tampak elegan */
-  h2 {
-    color: #000;
-    margin-bottom: 10px;
-  }
 }
+
