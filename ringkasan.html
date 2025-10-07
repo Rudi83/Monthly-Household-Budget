@@ -58,6 +58,9 @@
         .get();
 
       const transaksi = snapshot.docs.map(doc => doc.data());
+      // Urutan berdasarkan tanggal terbaru
+      transaksi.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal)); 
+      
       const totalMasuk = transaksi.filter(t => t.tipe==="masuk").reduce((a,b)=>a+b.jumlah,0);
       const totalKeluar = transaksi.filter(t => t.tipe==="keluar").reduce((a,b)=>a+b.jumlah,0);
       const saldo = totalMasuk-totalKeluar;
@@ -159,6 +162,9 @@
         .get();
         
       const transaksi = snapshot.docs.map(doc => doc.data());
+      // Urutan berdasarkan tanggal terbaru
+      
+      transaksi.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
       const totalMasuk = transaksi.filter(t => t.tipe==="masuk").reduce((a,b)=>a+b.jumlah,0);
       const totalKeluar = transaksi.filter(t => t.tipe==="keluar").reduce((a,b)=>a+b.jumlah,0);
       const saldo = totalMasuk-totalKeluar;
