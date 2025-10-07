@@ -484,7 +484,6 @@ tr:hover {
 }
 
 /* ==== Fix tabel terpotong dan tampilan rapi di PDF (html2pdf.js) ==== */
-@media print, screen {
   /* Hindari tabel terpotong di tengah halaman */
   tr, td, th {
     page-break-inside: avoid !important;
@@ -495,5 +494,6 @@ tr:hover {
     page-break-after: auto;
   }
 }
+
 
 
