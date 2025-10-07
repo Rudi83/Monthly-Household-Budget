@@ -483,7 +483,6 @@ tr:hover {
   background: rgba(23, 162, 184, 0.95); /* warna biru untuk info */
 }
 
-/* ==== Fix tabel terpotong dan tampilan rapi di PDF (html2pdf.js) ==== */
   /* Hindari tabel terpotong di tengah halaman */
   tr, td, th {
     page-break-inside: avoid !important;
@@ -493,7 +492,3 @@ tr:hover {
   tr {
     page-break-after: auto;
   }
-}
-
-
-
